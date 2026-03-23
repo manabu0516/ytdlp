@@ -1,0 +1,5 @@
+{
+    "casheDir" : "cache",
+    "storageDir" : "storage",
+    "binarry" : "/usr/local/bin/yt-dlp"
+}
