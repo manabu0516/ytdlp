@@ -82,7 +82,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
     const fs = require('fs').promises;
     const pathModule = require('path');
 
-    app.use('/static', express.static('webroot'));
+    app.use('/ytdlp/static', express.static('webroot'));
 
     app.get('/ytdlp/preset', async (req, res) => {
         const data = await fs.readFile('preset.json', 'utf8');
