@@ -14,7 +14,7 @@
   "author": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js /conf"
   },
   "dependencies": {
     "express": "^5.2.1"

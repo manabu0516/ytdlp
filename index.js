@@ -6,18 +6,26 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true}))
 
 const PORT = process.env.PORT || 3000;
+const targetDir = process.argv[2];
 
-const configure = ((target) => {
+const configureFilePath = targetDir !== undefined ? targetDir + '/configure.json' : 'configure.json';
+const presetFilePath = targetDir !== undefined ? targetDir + '/preset.json' : 'preset.json';
+
+const configure = ((confPath) => {
     const fs = require('fs');
-    const path = require('path');
-    const confPath = target;
+    
+    const exist = fs.existsSync(confPath);
+    if(exist == false) {
+        const json = {"casheDir" : "/cache","storageDir" : "/storage","binarry" : "/usr/local/bin/yt-dlp"};
+        fs.writeFileSync(confPath, JSON.stringify(json, null , "\t"), 'utf8');
+    }
     const configure = JSON.parse(fs.readFileSync(confPath, 'utf8'));
     return configure;
-})('configure.json');
+})(configureFilePath);
 
-(() => {
+((prestPath) => {
     const fs = require('fs');
-    const exist = fs.existsSync('preset.json');
+    const exist = fs.existsSync(prestPath);
     if(exist == false) {
         const json = {
             "default" : {
@@ -27,10 +35,10 @@ const configure = ((target) => {
                 options : []
             }
         };
-        fs.writeFileSync('preset.json', JSON.stringify(json, null , "\t"), 'utf8');
+        fs.writeFileSync(prestPath, JSON.stringify(json, null , "\t"), 'utf8');
     }
 
-})();
+})(presetFilePath);
 
 ((targetDir) => {
     const fs = require('fs');
@@ -85,7 +93,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
     app.use('/ytdlp/static', express.static('webroot'));
 
     app.get('/ytdlp/preset', async (req, res) => {
-        const data = await fs.readFile('preset.json', 'utf8');
+        const data = await fs.readFile(prestPath, 'utf8');
         res.json(JSON.parse(data));
     });
 
