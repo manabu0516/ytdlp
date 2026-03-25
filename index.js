@@ -19,6 +19,10 @@ const logger = (() => {
         console.log(msg + ':' + JSON.stringify(option !== null && option !== undefined ? option : {}));
     };
 
+    instance.debug = (flg, msg, option) => {
+        if(flg === true) output(msg, option);
+    };
+
     instance.or = (flg, msg1, msg2, option) => {
         if(flg) output(msg1, option);
         else output(msg2, option);
@@ -37,7 +41,7 @@ const configure = ((confPath) => {
     logger.or(exist, 'exist configure file', 'not exist configure file, create configure file', {path:confPath});
 
     if(exist == false) {
-        const json = {"casheDir" : "/cache","storageDir" : "/storage","binarry" : "/usr/local/bin/yt-dlp"};
+        const json = {"casheDir" : "/cache","storageDir" : "/storage","binarry" : "/usr/local/bin/yt-dlp", "debug":true};
         logger.log('create configure file', {path:confPath, json:json});
         fs.writeFileSync(confPath, JSON.stringify(json, null , "\t"), 'utf8');
     }
@@ -106,6 +110,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
 
         const childProcess = spawn(command, [opt_o  ,option_text, url]);
         childProcess.stdout.on('data', (chunk) => {
+            logger.debug(configure.debug, chunk.toString() ,{});
             fs.appendFile(casheDir + '/' + dataId + '.txt', chunk.toString(), 'utf8')
         });
 
