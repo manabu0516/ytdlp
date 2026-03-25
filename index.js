@@ -91,7 +91,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
         return crypto.randomUUID();
     };
 
-    return async (url, dlpath, filename) => {
+    return async (url, dlpath, filename, options) => {
         const opt_o = '-o ' + rootDir + '/' + dlpath +'/' + filename;
         const dataId = uuid();
 
@@ -99,13 +99,14 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             status : 'start'
         };
 
+        const option_text = options.join(' ');
+
         await fs.writeFile(casheDir + '/' + dataId + '.json', JSON.stringify(processData), 'utf8');
         await fs.writeFile(casheDir + '/' + dataId + '.txt', '', 'utf8');
 
-        const childProcess = spawn(command, [opt_o  , url]);
+        const childProcess = spawn(command, [opt_o  ,option_text, url]);
         childProcess.stdout.on('data', (chunk) => {
             fs.appendFile(casheDir + '/' + dataId + '.txt', chunk.toString(), 'utf8')
-
         });
 
         childProcess.stdout.on('close', (chunk) => {
@@ -125,43 +126,64 @@ const invokeProcess = ((command, casheDir, rootDir) => {
     app.use('/ytdlp/static', express.static('webroot'));
 
     app.get('/ytdlp/preset', async (req, res) => {
-        const data = await fs.readFile(prestPath, 'utf8');
-        res.json(JSON.parse(data));
+        try {
+            const data = await fs.readFile(prestPath, 'utf8');
+            res.json(JSON.parse(data));
+        } catch (e) {
+            res.json({error : e});
+        }
+        
     });
 
     app.get('/ytdlp/processes', async (req, res) => {
-        const entries = await fs.readdir(configure.casheDir, {withFileTypes: true});
-        res.json(entries.map(e => e.name).filter(e => e.endsWith('.json')).map(e => pathModule.basename(e, pathModule.extname(e))));
+        try {
+            const entries = await fs.readdir(configure.casheDir, {withFileTypes: true});
+            res.json(entries.map(e => e.name).filter(e => e.endsWith('.json')).map(e => pathModule.basename(e, pathModule.extname(e))));
+        } catch (e) {
+            res.json({error : e});
+        }
     });
 
     app.delete('/ytdlp/status/:pid', async (req, res) => {
-        const dataId = req.params.pid;
-        await fs.unlink(configure.casheDir + '/' + dataId + '.json');
-        await fs.unlink(configure.casheDir + '/' + dataId + '.txt'); 
-
-        res.json({dataId : dataId});
+        try {
+            const dataId = req.params.pid;
+            await fs.unlink(configure.casheDir + '/' + dataId + '.json');
+            await fs.unlink(configure.casheDir + '/' + dataId + '.txt'); 
+            res.json({dataId : dataId});
+        } catch (e) {
+            res.json({error : e});
+        }
     });
 
     app.get('/ytdlp/status/:pid', async (req, res) => {
-        const dataId = req.params.pid;
-        const json = await fs.readFile(configure.casheDir + '/' + dataId + '.json', 'utf8');
-        const stream = await fs.readFile(configure.casheDir + '/' + dataId + '.txt', 'utf8'); 
+        try {
+            const dataId = req.params.pid;
+            const json = await fs.readFile(configure.casheDir + '/' + dataId + '.json', 'utf8');
+            const stream = await fs.readFile(configure.casheDir + '/' + dataId + '.txt', 'utf8'); 
 
-        res.json({
-            stream : stream,
-            meta : JSON.parse(json)
-        });
+            res.json({
+                stream : stream,
+                meta : JSON.parse(json)
+            });
+        } catch (e) {
+            res.json({error : e});
+        }
     });
 
     app.post('/ytdlp/process', async (req, res) => {
-        const url = req.body.url ;
-        const preset_key = req.body.preset;
-        const preset_data = JSON.parse(await fs.readFile('preset.json', 'utf8'));
 
-        const preset = preset_data[preset_key];
+        try {
+            const url = req.body.url ;
+            const preset_key = req.body.preset;
+            const preset_data = JSON.parse(await fs.readFile('preset.json', 'utf8'));
 
-        const processId = await invokeProcess(url, preset.dlpath, preset.filename);
-        res.json({processId:processId});
+            const preset = preset_data[preset_key];
+
+            const processId = await invokeProcess(url, preset.dlpath, preset.filename, preset.options);
+            res.json({processId:processId});
+        } catch (e) {
+            res.json({error : e});
+        }
     });
 
 })();
