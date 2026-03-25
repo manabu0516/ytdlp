@@ -16,7 +16,7 @@ const logger = (() => {
     const instance = {};
 
     const output = (msg, option) => {
-        console.log(msg + ':' + JSON.stringify(option));
+        console.log(msg + ':' + JSON.stringify(option !== null && option !== undefined ? option : {}));
     };
 
     instance.or = (flg, msg1, msg2, option) => {
@@ -27,26 +27,33 @@ const logger = (() => {
         output(msg, option);
     };
 
-    return instance();
+    return instance;
 })();
 
 const configure = ((confPath) => {
     const fs = require('fs');
     
     const exist = fs.existsSync(confPath);
-    logger.or(exist, '', '');
+    logger.or(exist, 'exist configure file', 'not exist configure file, create configure file', {path:confPath});
 
     if(exist == false) {
         const json = {"casheDir" : "/cache","storageDir" : "/storage","binarry" : "/usr/local/bin/yt-dlp"};
+        logger.log('create configure file', {path:confPath, json:json});
         fs.writeFileSync(confPath, JSON.stringify(json, null , "\t"), 'utf8');
     }
+
+    logger.log('load configure file', {path:confPath});
     const configure = JSON.parse(fs.readFileSync(confPath, 'utf8'));
+    logger.log('configure data', configure);
+
     return configure;
 })(configureFilePath);
 
 ((prestPath) => {
     const fs = require('fs');
     const exist = fs.existsSync(prestPath);
+    logger.or(exist, 'exist preset file', 'not exist preset file, create preset file', {path:prestPath});
+    
     if(exist == false) {
         const json = {
             "default" : {
@@ -56,6 +63,7 @@ const configure = ((confPath) => {
                 options : []
             }
         };
+        logger.log('create preset file', {path:prestPath, json:json});
         fs.writeFileSync(prestPath, JSON.stringify(json, null , "\t"), 'utf8');
     }
 
@@ -65,10 +73,13 @@ const configure = ((confPath) => {
     const fs = require('fs');
 
     const entries = fs.readdirSync(targetDir);
+    logger.log('start clean cache dir', {path:targetDir});
     for (let i = 0; i < entries.length; i++) {
         const fileName = entries[i];
+        logger.log('  unlink file', {fileName:fileName});
         fs.unlinkSync(targetDir + '/' + fileName);
     }
+    logger.log('end clean cache dir', {path:targetDir});
 })(configure.casheDir);
 
 const invokeProcess = ((command, casheDir, rootDir) => {
@@ -156,5 +167,5 @@ const invokeProcess = ((command, casheDir, rootDir) => {
 })();
 
 app.listen(PORT, () => {
-    console.log(`API listening on port ${PORT}`);
+    logger.log('start web server.', {port:PORT});
 });
