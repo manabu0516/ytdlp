@@ -11,10 +11,31 @@ const targetDir = process.argv[2];
 const configureFilePath = targetDir !== undefined ? targetDir + '/configure.json' : 'configure.json';
 const presetFilePath = targetDir !== undefined ? targetDir + '/preset.json' : 'preset.json';
 
+const logger = (() => {
+
+    const instance = {};
+
+    const output = (msg, option) => {
+        console.log(msg + ':' + JSON.stringify(option));
+    };
+
+    instance.or = (flg, msg1, msg2, option) => {
+        if(flg) output(msg1, option);
+        else output(msg2, option);
+    };
+    instance.log = (msg, option) => {
+        output(msg, option);
+    };
+
+    return instance();
+})();
+
 const configure = ((confPath) => {
     const fs = require('fs');
     
     const exist = fs.existsSync(confPath);
+    logger.or(exist, '', '');
+
     if(exist == false) {
         const json = {"casheDir" : "/cache","storageDir" : "/storage","binarry" : "/usr/local/bin/yt-dlp"};
         fs.writeFileSync(confPath, JSON.stringify(json, null , "\t"), 'utf8');
