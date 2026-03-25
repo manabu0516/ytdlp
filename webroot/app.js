@@ -20,7 +20,7 @@ const reload_prests = (() => {
         });
 
         html.push('<option selected value="" >未選択</option>');
-        $("#preset-select").html(html.join());
+        $("#preset-select").html(html.join('\r\n'));
     };
 })();
 
@@ -98,7 +98,7 @@ const reload_processes = (() => {
         const html = process_data.map(e => {
             return '<a onclick="show_process_detail(this)" class="list-group-item d-flex justify-content-between align-items-center" href="#'+e+'" style="cursor: pointer;">'+e+'</a>'
         });
-        $("#process-list-group").html(html.join());
+        $("#process-list-group").html(html.join('\r\n'));
     };
 })();
 
