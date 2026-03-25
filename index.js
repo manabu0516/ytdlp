@@ -127,10 +127,10 @@ const invokeProcess = ((command, casheDir, rootDir) => {
 
     app.get('/ytdlp/preset', async (req, res) => {
         try {
-            const data = await fs.readFile(prestPath, 'utf8');
+            const data = await fs.readFile(presetFilePath, 'utf8');
             res.json(JSON.parse(data));
         } catch (e) {
-            res.json({error : e});
+            res.json({error : e+''});
         }
         
     });
@@ -140,7 +140,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             const entries = await fs.readdir(configure.casheDir, {withFileTypes: true});
             res.json(entries.map(e => e.name).filter(e => e.endsWith('.json')).map(e => pathModule.basename(e, pathModule.extname(e))));
         } catch (e) {
-            res.json({error : e});
+            res.json({error : e+''});
         }
     });
 
@@ -151,7 +151,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             await fs.unlink(configure.casheDir + '/' + dataId + '.txt'); 
             res.json({dataId : dataId});
         } catch (e) {
-            res.json({error : e});
+            res.json({error : e+''});
         }
     });
 
@@ -166,7 +166,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
                 meta : JSON.parse(json)
             });
         } catch (e) {
-            res.json({error : e});
+            res.json({error : e+''});
         }
     });
 
@@ -182,7 +182,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             const processId = await invokeProcess(url, preset.dlpath, preset.filename, preset.options);
             res.json({processId:processId});
         } catch (e) {
-            res.json({error : e});
+            res.json({error : e+''});
         }
     });
 
