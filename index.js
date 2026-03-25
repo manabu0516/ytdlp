@@ -71,6 +71,9 @@ const configure = ((confPath) => {
         fs.writeFileSync(prestPath, JSON.stringify(json, null , "\t"), 'utf8');
     }
 
+    const data = JSON.parse(fs.readFileSync(prestPath, 'utf8'));
+    logger.log('preset data', data);
+
 })(presetFilePath);
 
 ((targetDir) => {
@@ -96,22 +99,29 @@ const invokeProcess = ((command, casheDir, rootDir) => {
     };
 
     return async (url, dlpath, filename, options) => {
-        const opt_o = '-o ' + rootDir + '/' + dlpath +'/' + filename;
         const dataId = uuid();
 
+        const parameters = [];
+        parameters.push('-o');
+        parameters.push(rootDir + '/' + dlpath +'/' + filename);
+        options.forEach((element) => parameters.push(element));
+        parameters.push(url);
+
+        logger.log('process start. ', parameters);
         const processData = {
             status : 'start'
         };
 
-        const option_text = options.join(' ');
-
         await fs.writeFile(casheDir + '/' + dataId + '.json', JSON.stringify(processData), 'utf8');
         await fs.writeFile(casheDir + '/' + dataId + '.txt', '', 'utf8');
 
-        const childProcess = spawn(command, [opt_o  ,option_text, url]);
+        const childProcess = spawn(command, parameters);
         childProcess.stdout.on('data', (chunk) => {
-            logger.debug(configure.debug, chunk.toString() ,{});
-            fs.appendFile(casheDir + '/' + dataId + '.txt', chunk.toString(), 'utf8')
+            fs.appendFile(casheDir + '/' + dataId + '.txt', chunk.toString(), 'utf8');
+        });
+
+        childProcess.stdout.on('error', (e) => {
+            console.log(e);
         });
 
         childProcess.stdout.on('close', (chunk) => {
@@ -136,6 +146,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             res.json(JSON.parse(data));
         } catch (e) {
             res.json({error : e+''});
+            console.log(e);
         }
         
     });
@@ -146,6 +157,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             res.json(entries.map(e => e.name).filter(e => e.endsWith('.json')).map(e => pathModule.basename(e, pathModule.extname(e))));
         } catch (e) {
             res.json({error : e+''});
+            console.log(e);
         }
     });
 
@@ -157,6 +169,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             res.json({dataId : dataId});
         } catch (e) {
             res.json({error : e+''});
+            console.log(e);
         }
     });
 
@@ -172,6 +185,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             });
         } catch (e) {
             res.json({error : e+''});
+            console.log(e);
         }
     });
 
@@ -180,7 +194,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
         try {
             const url = req.body.url ;
             const preset_key = req.body.preset;
-            const preset_data = JSON.parse(await fs.readFile('preset.json', 'utf8'));
+            const preset_data = JSON.parse(await fs.readFile(presetFilePath, 'utf8'));
 
             const preset = preset_data[preset_key];
 
@@ -188,6 +202,7 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             res.json({processId:processId});
         } catch (e) {
             res.json({error : e+''});
+            console.log(e);
         }
     });
 

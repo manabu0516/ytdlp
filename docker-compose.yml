@@ -9,3 +9,4 @@ services:
     volumes:
       - /storage:/storage
       - ./cache:/cache
+      - ./conf:/conf
