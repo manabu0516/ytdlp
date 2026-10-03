@@ -73,10 +73,8 @@ const handle_submit_promise = async (promise) => {
 const show_process_detail = (() => {  
     const modal = new bootstrap.Modal(document.getElementById('processModal'), {keyboard: false});
 
-    return async (e) => {
+    return async (pid) => {
         loading.show();
-
-        const pid = $(e).text();
         const process_data = await (await fetch("/ytdlp/status/"+pid)).json();
         console.log(process_data);
         
@@ -96,11 +94,16 @@ const reload_processes = (() => {
         console.log(process_data);
 
         const html = process_data.map(e => {
-            return '<a onclick="show_process_detail(this)" class="list-group-item d-flex justify-content-between align-items-center" href="#'+e+'" style="cursor: pointer;">'+e+'</a>'
+            return '<a onclick="show_process_detail(\''+e.entry+'\')" class="list-group-item d-flex justify-content-between align-items-center" href="#'+e.entry+'" style="cursor: pointer;">'+e.entry+ '<span class="badge bg-secondary">'+toDispDate(e.birthtime)+'</span>' + '</a>'
         });
         $("#process-list-group").html(html.join('\r\n'));
     };
 })();
+
+const toDispDate = (ms) => {
+    const date = new Date(ms);
+    return date.toLocaleString("ja-JP");
+};
 
 $(async () =>  {
     await reload_prests();

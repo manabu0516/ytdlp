@@ -172,8 +172,19 @@ const invokeProcess = ((command, casheDir, rootDir) => {
 
     app.get('/ytdlp/processes', async (req, res) => {
         try {
-            const entries = await fs.readdir(configure.casheDir, {withFileTypes: true});
-            res.json(entries.map(e => e.name).filter(e => e.endsWith('.json')).map(e => pathModule.basename(e, pathModule.extname(e))));
+            const entries = (await fs.readdir(configure.casheDir, {withFileTypes: true}))
+                .filter(e => e.name.endsWith('.json'));
+            
+            const entriesWithTime = await Promise.all(
+                entries.map(async (entry) => {
+                    const fullPath = pathModule.join(configure.casheDir, entry.name);
+                    const stats = await fs.stat(fullPath);
+                    return {entry:pathModule.basename(entry.name, '.json'), birthtime: stats.ctimeMs};
+                })
+            );
+
+            entriesWithTime.sort((a, b) => b.birthtime - a.birthtime);
+            res.json(entriesWithTime);
         } catch (e) {
             res.json({error : e+''});
             console.log(e);
