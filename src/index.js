@@ -107,7 +107,8 @@ const configure = ((confPath) => {
 
 const invokeProcess = ((command, casheDir, rootDir) => {
     const crypto = require("crypto");
-    const fs = require('fs').promises
+    const fs = require('fs').promises;
+    const pathModule = require('path');
     const { spawn } = require('child_process');
 
     const uuid = () => {
@@ -120,7 +121,10 @@ const invokeProcess = ((command, casheDir, rootDir) => {
         const parameters = [];
         parameters.push('-o');
 
-        parameters.push(rootDir +'/'+ filename);
+        const pathEntry = [rootDir, dlpath].map(e => e.trim()).filter(e => e != '');
+        const finalPath = pathModule.join(...pathEntry, filename);
+
+        parameters.push(finalPath);
         options.forEach((element) => parameters.push(element));
         parameters.push(url);
 
