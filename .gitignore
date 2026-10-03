@@ -1,4 +1,3 @@
 node_modules/
-cache/
-storage/
+application/
 preset.json

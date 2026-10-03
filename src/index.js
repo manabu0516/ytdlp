@@ -8,8 +8,8 @@ app.use(express.urlencoded({ extended: true}))
 const PORT = process.env.PORT || 3000;
 const targetDir = process.argv[2];
 
-const configureFilePath = targetDir !== undefined ? targetDir + '/configure.json' : 'configure.json';
-const presetFilePath = targetDir !== undefined ? targetDir + '/preset.json' : 'preset.json';
+const configureFilePath = targetDir !== undefined ? targetDir + '/configure.json' : '/application/configure.json';
+const presetFilePath = targetDir !== undefined ? targetDir + '/preset.json' : '/application/preset.json';
 
 const logger = (() => {
 
@@ -41,7 +41,7 @@ const configure = ((confPath) => {
     logger.or(exist, 'exist configure file', 'not exist configure file, create configure file', {path:confPath});
 
     if(exist == false) {
-        const json = {"casheDir" : "/cache","storageDir" : "/storage","binarry" : "/usr/local/bin/yt-dlp", "debug":true};
+        const json = {"casheDir" : "/application/cache","storageDir" : "/application/storage","binarry" : "/usr/local/bin/yt-dlp", "debug":true};
         logger.log('create configure file', {path:confPath, json:json});
         fs.writeFileSync(confPath, JSON.stringify(json, null , "\t"), 'utf8');
     }
@@ -79,6 +79,12 @@ const configure = ((confPath) => {
 ((targetDir) => {
     const fs = require('fs');
 
+    const exist = fs.existsSync(targetDir);
+    logger.or(exist, 'exist cache directroy', 'not exist cache directroy, create cache directroy', {path:targetDir});
+    if(exist == false) {
+        fs.mkdirSync(targetDir);
+    }
+
     const entries = fs.readdirSync(targetDir);
     logger.log('start clean cache dir', {path:targetDir});
     for (let i = 0; i < entries.length; i++) {
@@ -88,6 +94,16 @@ const configure = ((confPath) => {
     }
     logger.log('end clean cache dir', {path:targetDir});
 })(configure.casheDir);
+
+((targetDir) => {
+    const fs = require('fs');
+
+    const exist = fs.existsSync(targetDir);
+    logger.or(exist, 'exist storage directroy', 'not exist storage directroy, create storage directroy', {path:targetDir});
+    if(exist == false) {
+        fs.mkdirSync(targetDir);
+    }
+})(configure.storageDir);
 
 const invokeProcess = ((command, casheDir, rootDir) => {
     const crypto = require("crypto");
@@ -103,13 +119,15 @@ const invokeProcess = ((command, casheDir, rootDir) => {
 
         const parameters = [];
         parameters.push('-o');
-        parameters.push(rootDir + '/' + dlpath +'/' + filename);
+
+        parameters.push(rootDir +'/'+ filename);
         options.forEach((element) => parameters.push(element));
         parameters.push(url);
 
-        logger.log('process start. ', parameters);
+        logger.log('process start. ', {p : parameters, c : command});
         const processData = {
-            status : 'start'
+            status : 'start',
+            startTime : Date.now()
         };
 
         await fs.writeFile(casheDir + '/' + dataId + '.json', JSON.stringify(processData), 'utf8');
@@ -120,12 +138,13 @@ const invokeProcess = ((command, casheDir, rootDir) => {
             fs.appendFile(casheDir + '/' + dataId + '.txt', chunk.toString(), 'utf8');
         });
 
-        childProcess.stdout.on('error', (e) => {
-            console.log(e);
+        childProcess.stderr.on('data', (chunk) => {
+            fs.appendFile(casheDir + '/' + dataId + '.txt', chunk.toString(), 'utf8');
         });
 
         childProcess.stdout.on('close', (chunk) => {
             processData.status = 'complete';
+            processData.endTIme = Date.now();
             fs.writeFile(casheDir + '/' + dataId + '.json', JSON.stringify(processData), 'utf8');
         });
 
